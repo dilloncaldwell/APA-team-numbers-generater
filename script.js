@@ -68,7 +68,7 @@ function displayResults(teams, gameType) {
 
   const highs = gameType === '8' ? [6, 7] : [7, 8, 9];
 
-  teamCountSpan.textContent = `${teams.length} unique team${teams.length !== 1 ? 's' : ''}`;
+  teamCountSpan.textContent = `${teams.length} unique play${teams.length !== 1 ? 's' : ''}`;
   highRanksSpan.textContent = ` | High ranks: ${highs.join(', ')}`;
 
   teamsListDiv.innerHTML = '';
