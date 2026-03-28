@@ -64,13 +64,13 @@ function displayResults(teams, gameType) {
   const resultsDiv = document.getElementById('results');
   const teamsListDiv = document.getElementById('teamsList');
   const teamCountSpan = document.getElementById('teamCount');
-  const highRanksSpan = document.getElementById('highRanks');
+  // const highRanksSpan = document.getElementById('highRanks');
   const copyAllBtn = document.getElementById('copyAllBtn');
 
   const highs = gameType === '8' ? [6, 7] : [7, 8, 9];
 
-  teamCountSpan.textContent = `${teams.length} unique team${teams.length !== 1 ? 's' : ''}`;
-  highRanksSpan.textContent = ` | High ranks: ${highs.join(', ')}`;
+  teamCountSpan.textContent = `${teams.length} unique play${teams.length !== 1 ? 's' : ''}`;
+  // highRanksSpan.textContent = ` | High ranks: ${highs.join(', ')}`;
 
   // Setup copy all button
   copyAllBtn.style.display = teams.length > 0 ? 'inline-flex' : 'none';
