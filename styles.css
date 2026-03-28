@@ -69,6 +69,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -78,6 +84,8 @@ body {
   min-height: 100vh;
   padding: 16px;
   transition: background 0.3s ease;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .container {
@@ -86,7 +94,7 @@ body {
   background: var(--bg-primary);
   border-radius: 16px;
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  overflow: visible;
   transition: background 0.3s ease;
 }
 
@@ -114,6 +122,7 @@ header {
   justify-content: center;
   font-size: 20px;
   transition: all 0.3s ease;
+  touch-action: manipulation;
 }
 
 .theme-toggle:hover {
@@ -199,7 +208,9 @@ label {
   border: 2px solid var(--border-color);
   transition: all 0.2s ease;
   min-height: 50px;
-  margin-bottom: 0;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .radio-group label:hover {
@@ -234,6 +245,7 @@ input[type='text'] {
   background: var(--bg-card);
   color: var(--text-primary);
   min-height: 52px;
+  touch-action: pan-y;
 }
 
 input[type='text']:focus {
@@ -258,6 +270,7 @@ input[type='text']:focus {
   gap: 10px;
   margin-top: 16px;
   margin-bottom: 16px;
+  touch-action: manipulation;
 }
 
 .number-btn {
@@ -278,6 +291,9 @@ input[type='text']:focus {
   align-items: center;
   justify-content: center;
   opacity: 1;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .number-btn:hover:not(:disabled) {
@@ -317,6 +333,9 @@ input[type='text']:focus {
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 48px;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .clear-btn:hover,
@@ -344,6 +363,9 @@ button[type='submit'] {
   width: 100%;
   min-height: 56px;
   box-shadow: var(--shadow-sm);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 button[type='submit']:hover {
@@ -413,6 +435,9 @@ button[type='submit']:active {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .team-card:hover {
@@ -571,11 +596,6 @@ footer a:hover {
     width: 48px;
     height: 48px;
   }
-}
-
-/* Smooth scrolling */
-html {
-  scroll-behavior: smooth;
 }
 
 /* Custom scrollbar */
