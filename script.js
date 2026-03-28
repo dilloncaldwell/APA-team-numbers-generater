@@ -82,7 +82,7 @@ function displayResults(teams, gameType) {
       const card = document.createElement('div');
       card.className = 'team-card';
       card.innerHTML = `
-        <div class="team-numbers">[${team.join(', ')}]</div>
+        <div class="team-numbers">${team.join(', ')}</div>
         <div class="team-total">Total: ${total}</div>
       `;
 

@@ -8,9 +8,14 @@
   --text-muted: #6c6f85;
   --border-color: #9ca0b0;
   --border-input: #acb0be;
-  --accent-primary: #8839ef;
-  --accent-secondary: #ea76cb;
-  --accent-hover: rgba(136, 57, 239, 0.1);
+  /*--accent-primary: #8839ef;*/
+  /*--accent-primary: #632753;*/
+  --accent-primary: #8aadf4;
+  /*--accent-secondary: #ea76cb;*/
+  /*--accent-secondary: #632753;*/
+  --accent-secondary: #658ad4;
+  /*--accent-hover: rgba(136, 57, 239, 0.1);*/
+  --accent-hover: rgba(84, 114, 223, 0.1);
   --shadow-sm: 0 2px 8px rgba(76, 79, 105, 0.1);
   --shadow-md: 0 4px 12px rgba(76, 79, 105, 0.15);
   --shadow-lg: 0 20px 60px rgba(76, 79, 105, 0.3);
@@ -35,9 +40,14 @@
   --text-muted: #a6adc8;
   --border-color: #45475a;
   --border-input: #585b70;
-  --accent-primary: #cba6f7;
-  --accent-secondary: #f5c2e7;
+  /*--accent-primary: #cba6f7;*/
+  /*--accent-primary: #632753;*/
+  --accent-primary: #8aadf4;
+  /*--accent-secondary: #f5c2e7;*/
+  /*--accent-secondary: #632753;*/
+  --accent-secondary: #658ad4;
   --accent-hover: rgba(203, 166, 247, 0.15);
+  --accent-hover: rgba(84, 114, 223, 0.15);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
@@ -151,9 +161,9 @@ header p {
 }
 
 .rules li {
-  margin: 8px 0;
+  margin: 3px 0;
   color: var(--text-secondary);
-  font-size: 0.95em;
+  font-size: 0.85em;
 }
 
 .form-group {
@@ -196,11 +206,10 @@ label {
 }
 
 .radio-group input[type='radio'] {
-  cursor: pointer;
-  width: 20px;
-  height: 20px;
-  margin: 0;
-  accent-color: var(--accent-primary);
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
 }
 
 .radio-group input[type='radio']:checked + span {
@@ -247,7 +256,6 @@ input[type='text']:focus {
   gap: 10px;
   margin-top: 16px;
   margin-bottom: 16px;
-  max-width: 320px;
 }
 
 .number-btn {
@@ -388,7 +396,7 @@ button[type='submit']:active {
 
 .teams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 12px;
 }
 
