@@ -125,10 +125,12 @@ header {
   touch-action: manipulation;
 }
 
-.theme-toggle:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-primary);
-  transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+  .theme-toggle:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-primary);
+    transform: scale(1.05);
+  }
 }
 
 .theme-toggle:active {
@@ -213,9 +215,11 @@ label {
   -webkit-user-select: none;
 }
 
-.radio-group label:hover {
-  border-color: var(--accent-primary);
-  background: var(--accent-hover);
+@media (hover: hover) and (pointer: fine) {
+  .radio-group label:hover {
+    border-color: var(--accent-primary);
+    background: var(--accent-hover);
+  }
 }
 
 .radio-group input[type='radio'] {
@@ -296,14 +300,18 @@ input[type='text']:focus {
   -webkit-user-select: none;
 }
 
-.number-btn:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-primary);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .number-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+  }
 }
 
 .number-btn:active:not(:disabled) {
   transform: translateY(0);
+  background: var(--accent-hover);
+  border-color: var(--accent-primary);
 }
 
 .number-btn:disabled {
@@ -338,11 +346,13 @@ input[type='text']:focus {
   -webkit-user-select: none;
 }
 
-.clear-btn:hover,
-.backspace-btn:hover {
-  border-color: var(--error-border);
-  color: var(--error-text);
-  background: var(--error-bg);
+@media (hover: hover) and (pointer: fine) {
+  .clear-btn:hover,
+  .backspace-btn:hover {
+    border-color: var(--error-border);
+    color: var(--error-text);
+    background: var(--error-bg);
+  }
 }
 
 .clear-btn:active,
@@ -368,10 +378,12 @@ button[type='submit'] {
   -webkit-user-select: none;
 }
 
-button[type='submit']:hover {
-  background: var(--accent-secondary);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+@media (hover: hover) and (pointer: fine) {
+  button[type='submit']:hover {
+    background: var(--accent-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
 button[type='submit']:active {
@@ -440,10 +452,12 @@ button[type='submit']:active {
   -webkit-user-select: none;
 }
 
-.team-card:hover {
-  border-color: var(--accent-primary);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .team-card:hover {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
 }
 
 .team-card:active {
@@ -508,8 +522,10 @@ footer a {
   font-weight: 500;
 }
 
-footer a:hover {
-  text-decoration: underline;
+@media (hover: hover) and (pointer: fine) {
+  footer a:hover {
+    text-decoration: underline;
+  }
 }
 
 /* Mobile specific improvements */

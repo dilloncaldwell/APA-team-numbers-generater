@@ -160,13 +160,14 @@ function initNumberPad() {
   const backspaceBtn = document.getElementById('backspace');
 
   numberButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
+    const handleNumberClick = () => {
       const currentValue = playersInput.value.trim();
       const currentPlayers = currentValue ? currentValue.split(/\s+/).filter((n) => n) : [];
 
       // Check if we've reached the max player limit
       if (currentPlayers.length >= MAX_PLAYERS) {
         showError(`Maximum of ${MAX_PLAYERS} players allowed per team.`);
+        btn.blur();
         return;
       }
 
@@ -184,13 +185,23 @@ function initNumberPad() {
         btn.style.transform = '';
       }, 100);
 
+      // Blur button to prevent stuck hover state on mobile
+      btn.blur();
+
       // Focus input to show cursor
       playersInput.focus();
+    };
+
+    btn.addEventListener('click', handleNumberClick);
+    btn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleNumberClick();
     });
   });
 
   clearBtn.addEventListener('click', () => {
     playersInput.value = '';
+    clearBtn.blur();
     playersInput.focus();
     hideError();
     updateNumberPadState();
@@ -206,6 +217,7 @@ function initNumberPad() {
     }
 
     updateNumberPadState();
+    backspaceBtn.blur();
     playersInput.focus();
   });
 
