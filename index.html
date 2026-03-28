@@ -49,7 +49,14 @@
           </div>
 
           <div class="form-group">
-            <label for="players">Player Skill Levels</label>
+            <label for="players">
+              Player Skill Levels
+              <span
+                id="playerCount"
+                style="font-weight: 600; margin-left: 8px; color: var(--text-secondary)"
+                >(0/8)</span
+              >
+            </label>
             <input
               type="text"
               id="players"
@@ -57,10 +64,7 @@
               autocomplete="off"
               inputmode="none"
             />
-            <div class="hint">
-              Tap numbers below to add players (5-8 players required)
-              <span id="playerCount" style="font-weight: 600; margin-left: 8px"></span>
-            </div>
+            <div class="hint">Tap numbers below to add players (5-8 players required)</div>
 
             <div class="number-pad">
               <button type="button" class="number-btn" data-number="1">1</button>

@@ -244,13 +244,9 @@ function updateNumberPadState() {
   // Update player count display
   if (playerCountSpan) {
     const count = currentPlayers.length;
-    if (count === 0) {
-      playerCountSpan.textContent = '';
-    } else {
-      const color = count >= MAX_PLAYERS ? 'var(--accent-primary)' : 'var(--text-secondary)';
-      playerCountSpan.textContent = `(${count}/${MAX_PLAYERS})`;
-      playerCountSpan.style.color = color;
-    }
+    const color = count >= MAX_PLAYERS ? 'var(--accent-primary)' : 'var(--text-secondary)';
+    playerCountSpan.textContent = `(${count}/${MAX_PLAYERS})`;
+    playerCountSpan.style.color = color;
   }
 
   numberButtons.forEach((btn) => {
