@@ -65,11 +65,33 @@ function displayResults(teams, gameType) {
   const teamsListDiv = document.getElementById('teamsList');
   const teamCountSpan = document.getElementById('teamCount');
   const highRanksSpan = document.getElementById('highRanks');
+  const copyAllBtn = document.getElementById('copyAllBtn');
 
   const highs = gameType === '8' ? [6, 7] : [7, 8, 9];
 
-  teamCountSpan.textContent = `${teams.length} unique play${teams.length !== 1 ? 's' : ''}`;
+  teamCountSpan.textContent = `${teams.length} unique team${teams.length !== 1 ? 's' : ''}`;
   highRanksSpan.textContent = ` | High ranks: ${highs.join(', ')}`;
+
+  // Setup copy all button
+  copyAllBtn.style.display = teams.length > 0 ? 'inline-flex' : 'none';
+  copyAllBtn.onclick = () => {
+    const allTeams = teams.map((team) => team.join(' ')).join('\n');
+    navigator.clipboard
+      .writeText(allTeams)
+      .then(() => {
+        const originalHTML = copyAllBtn.innerHTML;
+        copyAllBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        copyAllBtn.style.color = 'var(--success-color)';
+        setTimeout(() => {
+          copyAllBtn.innerHTML = originalHTML;
+          copyAllBtn.style.color = '';
+        }, 1500);
+      })
+      .catch(() => {
+        // Silently fail - clipboard not available
+        console.log('Clipboard not available');
+      });
+  };
 
   teamsListDiv.innerHTML = '';
 
@@ -85,25 +107,6 @@ function displayResults(teams, gameType) {
         <div class="team-numbers">${team.join(', ')}</div>
         <div class="team-total">Total: ${total}</div>
       `;
-
-      // Add click to copy functionality
-      card.addEventListener('click', () => {
-        const teamText = team.join(' ');
-        navigator.clipboard
-          .writeText(teamText)
-          .then(() => {
-            // Visual feedback
-            const originalBg = card.style.background;
-            card.style.background = 'var(--accent-hover)';
-            setTimeout(() => {
-              card.style.background = originalBg;
-            }, 200);
-          })
-          .catch(() => {
-            // Fallback if clipboard API not available
-            console.log('Copy to clipboard not available');
-          });
-      });
 
       teamsListDiv.appendChild(card);
     });
