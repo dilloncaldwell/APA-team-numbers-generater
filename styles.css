@@ -490,7 +490,7 @@ button[type='submit']:active {
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all var(--transition-fast);
   touch-action: manipulation;
@@ -544,7 +544,7 @@ button[type='submit']:active {
 
 .team-numbers {
   font-size: 1.15em;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   font-family: 'Courier New', monospace;
   margin-bottom: var(--spacing-xs);
