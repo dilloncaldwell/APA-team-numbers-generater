@@ -275,7 +275,7 @@ input[type='text']:focus {
 /* Submit Button */
 button[type='submit'] {
   background: var(--accent-primary);
-  color: white;
+  color: var(--bg-primary);
   border: none;
   padding: var(--spacing-md) 30px;
   font-size: 17px;
@@ -504,9 +504,9 @@ button[type='submit']:active {
 }
 
 .filter-btn.active {
-  background: var(--accent-primary);
+  background: var(--accent-secondary);
   border-color: var(--accent-primary);
-  color: white;
+  color: var(--bg-secondary);
 }
 
 .filter-count {
