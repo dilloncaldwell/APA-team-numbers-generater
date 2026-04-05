@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#8839ef" />
+    <meta name="theme-color" content="#1e1e2e" />
     <meta
       name="description"
       content="Calculate valid 5-player APA team combinations with skill level constraints"
@@ -14,132 +14,137 @@
   <body>
     <div class="container">
       <header>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-          <span id="themeIcon">🌙</span>
-        </button>
         <h1>APA Team Numbers Generator</h1>
-        <p>Calculate valid 5-player team play combinations under APA rules</p>
+        <p>Calculate valid 5-player team combinations under APA rules</p>
       </header>
 
       <div class="content">
-        <div class="rules">
-          <h2>Rules</h2>
+        <details class="rules">
+          <summary>Rules</summary>
           <ul>
             <li>Teams must have exactly 5 players</li>
             <li>Total skill level cannot exceed 23</li>
-            <li>Maximum of 2 high-ranked players can play</li>
+            <li>Maximum of 2 high-ranked players per team</li>
             <li>8-ball: high ranks are 6 and 7</li>
             <li>9-ball: high ranks are 7, 8, and 9</li>
           </ul>
-        </div>
+        </details>
 
         <form id="teamForm">
-          <div class="form-group">
-            <label>Game Type</label>
-            <div class="radio-group">
-              <label>
-                <input type="radio" name="gameType" value="8" checked />
-                <span>8-ball</span>
+          <div id="formSection">
+            <div class="form-group">
+              <label>Game Type</label>
+              <div class="radio-group">
+                <label>
+                  <input type="radio" name="gameType" value="8" checked />
+                  <span>8-ball</span>
+                </label>
+                <label>
+                  <input type="radio" name="gameType" value="9" />
+                  <span>9-ball</span>
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="players">
+                Player Skill Levels
+                <span
+                  id="playerCount"
+                  style="font-weight: 600; margin-left: 8px; color: var(--text-secondary)"
+                  >(0/8)</span
+                >
               </label>
-              <label>
-                <input type="radio" name="gameType" value="9" />
-                <span>9-ball</span>
-              </label>
+              <input
+                type="text"
+                id="players"
+                placeholder="Tap numbers below or type (e.g., 7 6 5 4 4 3 2 2)"
+                autocomplete="off"
+                inputmode="none"
+              />
+              <div class="hint">Tap numbers below to add players (5-8 players required)</div>
+
+              <div class="number-pad">
+                <button type="button" class="number-btn" data-number="1">1</button>
+                <button type="button" class="number-btn" data-number="2">2</button>
+                <button type="button" class="number-btn" data-number="3">3</button>
+                <button type="button" class="number-btn" data-number="4">4</button>
+                <button type="button" class="number-btn" data-number="5">5</button>
+                <button type="button" class="number-btn" data-number="6">6</button>
+                <button type="button" class="number-btn" data-number="7">7</button>
+                <button type="button" class="number-btn" data-number="8">8</button>
+                <button type="button" class="number-btn" data-number="9">9</button>
+              </div>
+
+              <div class="input-controls">
+                <button type="button" class="backspace-btn" id="backspace">⌫ Backspace</button>
+                <button type="button" class="clear-btn" id="clear">✕ Clear</button>
+              </div>
             </div>
+
+            <button type="submit">Generate Team Plays</button>
           </div>
-
-          <div class="form-group">
-            <label for="players">
-              Player Skill Levels
-              <span
-                id="playerCount"
-                style="font-weight: 600; margin-left: 8px; color: var(--text-secondary)"
-                >(0/8)</span
-              >
-            </label>
-            <input
-              type="text"
-              id="players"
-              placeholder="Tap numbers below or type (e.g., 7 6 5 4 4 3 2 2)"
-              autocomplete="off"
-              inputmode="none"
-            />
-            <div class="hint">Tap numbers below to add players (5-8 players required)</div>
-
-            <div class="number-pad">
-              <button type="button" class="number-btn" data-number="1">1</button>
-              <button type="button" class="number-btn" data-number="2">2</button>
-              <button type="button" class="number-btn" data-number="3">3</button>
-              <button type="button" class="number-btn" data-number="4">4</button>
-              <button type="button" class="number-btn" data-number="5">5</button>
-              <button type="button" class="number-btn" data-number="6">6</button>
-              <button type="button" class="number-btn" data-number="7">7</button>
-              <button type="button" class="number-btn" data-number="8">8</button>
-              <button type="button" class="number-btn" data-number="9">9</button>
-            </div>
-
-            <div class="input-controls">
-              <button type="button" class="backspace-btn" id="backspace">⌫ Backspace</button>
-              <button type="button" class="clear-btn" id="clear">✕ Clear</button>
-            </div>
-          </div>
-
-          <button type="submit">Generate Team Plays</button>
         </form>
 
         <div id="error" class="error" style="display: none"></div>
 
-        <div id="results" class="results">
-          <div class="results-header">
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                flex-wrap: wrap;
-                gap: 12px;
-              "
-            >
-              <h3>Team Plays Found</h3>
-              <button
-                type="button"
-                id="copyAllBtn"
-                class="copy-all-btn"
-                style="display: none"
-                aria-label="Copy all teams"
-                title="Copy all teams"
+        <div id="resultsSection" style="display: none">
+          <button type="button" id="regenerateBtn" class="regenerate-btn">
+            Regenerate Team Plays
+          </button>
+
+          <div id="results" class="results">
+            <div class="results-header">
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  justify-content: space-between;
+                  flex-wrap: wrap;
+                  gap: 12px;
+                "
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                <h3>Team Plays Found</h3>
+                <button
+                  type="button"
+                  id="copyAllBtn"
+                  class="copy-all-btn"
+                  style="display: none"
+                  aria-label="Copy all teams"
+                  title="Copy all teams"
                 >
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="results-stats">
+                <span id="teamCount"></span>
+              </div>
+
+              <div class="filter-container" id="filterContainer" style="display: none">
+                <div class="filter-label">Filters:</div>
+                <div class="filter-buttons" id="filterButtons"></div>
+                <div class="filter-count" id="filterCount"></div>
+              </div>
             </div>
-            <div class="results-stats">
-              <span id="teamCount"></span>
-              <span id="highRanks"></span>
-            </div>
+
+            <div id="teamsList" class="teams-grid"></div>
           </div>
-          <div id="teamsList" class="teams-grid"></div>
         </div>
       </div>
 
       <footer>
-        <p>
-          Made for APA players |
-          <a href="https://github.com/dilloncaldwell/APA-team-numbers-generater" target="_blank"
-            >View on GitHub</a
-          >
-        </p>
+        <p>Made for APA players</p>
       </footer>
     </div>
 
