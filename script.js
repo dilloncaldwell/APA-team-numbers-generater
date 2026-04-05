@@ -1,499 +1,632 @@
-const MAX_TOTAL = 23;
-const TEAM_SIZE = 5;
-const MAX_PLAYERS = 8;
+// ================
+// CONSTANTS
+// ================
+const CONFIG = {
+  MAX_TOTAL: 23,
+  TEAM_SIZE: 5,
+  MAX_PLAYERS: 8,
+  ANIMATION_DELAY: {
+    FADE_OUT: 150,
+    FADE_IN: 50,
+    SCROLL: 100,
+    CARD_STAGGER: 0.02,
+    BUTTON_FEEDBACK: 100,
+    COPY_SUCCESS: 1500,
+  },
+};
 
-// Global state for filtering
-let allGeneratedTeams = [];
-let playersList = [];
-let activeFilterIndices = new Set();
+const GAME_TYPES = {
+  EIGHT_BALL: {
+    value: '8',
+    highRanks: new Set([6, 7]),
+    validNumbers: new Set([2, 3, 4, 5, 6, 7]),
+  },
+  NINE_BALL: {
+    value: '9',
+    highRanks: new Set([7, 8, 9]),
+    validNumbers: new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]),
+  },
+};
 
-// Get all combinations of array
-function* combinations(array, size) {
-  if (size === 0) {
-    yield [];
-    return;
-  }
-  if (array.length === 0) return;
+const SVG = {
+  CLIPBOARD: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
+  CHECKMARK: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+};
 
-  const [first, ...rest] = array;
+// =================
+// STATE
+// =================
+const State = {
+  allGeneratedTeams: [],
+  playersList: [],
+  activeFilterIndices: new Set(),
 
-  // Include first element
-  for (const combo of combinations(rest, size - 1)) {
-    yield [first, ...combo];
-  }
+  reset() {
+    this.allGeneratedTeams = [];
+    this.playersList = [];
+    this.activeFilterIndices.clear();
+  },
+};
 
-  // Exclude first element
-  for (const combo of combinations(rest, size)) {
-    yield combo;
-  }
-}
+// ===================
+// DOM HELPERS
+// ===================
+const DOM = {
+  get(id) {
+    return document.getElementById(id);
+  },
 
-function showError(message) {
-  const errorDiv = document.getElementById('error');
-  errorDiv.textContent = message;
-  errorDiv.style.display = 'block';
-  document.getElementById('results').classList.remove('show');
-}
+  getAll(selector) {
+    return document.querySelectorAll(selector);
+  },
 
-function hideError() {
-  document.getElementById('error').style.display = 'none';
-}
+  show(element) {
+    element.style.display = 'block';
+  },
 
-function generateTeams(players, gameType) {
-  const highs = gameType === '8' ? new Set([6, 7]) : new Set([7, 8, 9]);
-  const validTeams = new Set();
+  hide(element) {
+    element.style.display = 'none';
+  },
 
-  for (const combo of combinations(players, TEAM_SIZE)) {
-    const total = combo.reduce((sum, num) => sum + num, 0);
-    const highCount = combo.filter((num) => highs.has(num)).length;
+  setOpacity(element, value) {
+    element.style.opacity = value;
+  },
+};
 
-    if (total <= MAX_TOTAL && highCount <= 2) {
-      // Sort and convert to string for uniqueness
-      const sortedTeam = [...combo].sort((a, b) => a - b);
-      validTeams.add(JSON.stringify(sortedTeam));
+// ===================
+// UTILITY FUNCTIONS
+// ===================
+const Utils = {
+  // Generate all combinations of array
+  *combinations(array, size) {
+    if (size === 0) {
+      yield [];
+      return;
     }
-  }
+    if (array.length === 0) return;
 
-  // Convert back to arrays and sort
-  return Array.from(validTeams)
-    .map((str) => JSON.parse(str))
-    .sort((a, b) => {
-      for (let i = 0; i < TEAM_SIZE; i++) {
-        if (a[i] !== b[i]) return a[i] - b[i];
-      }
-      return 0;
+    const [first, ...rest] = array;
+
+    for (const combo of this.combinations(rest, size - 1)) {
+      yield [first, ...combo];
+    }
+
+    for (const combo of this.combinations(rest, size)) {
+      yield combo;
+    }
+  },
+
+  // Parse player input into array of numbers
+  parsePlayerInput(input) {
+    return input
+      .trim()
+      .split(/\s+/)
+      .filter((n) => n)
+      .map((str) => parseInt(str, 10));
+  },
+
+  // Count occurrences of each number in array
+  countOccurrences(array) {
+    const counts = {};
+    array.forEach((num) => {
+      counts[num] = (counts[num] || 0) + 1;
     });
-}
+    return counts;
+  },
 
-function createFilterButtons(players) {
-  const filterButtonsDiv = document.getElementById('filterButtons');
-  const filterContainer = document.getElementById('filterContainer');
+  // Smooth scroll to element
+  scrollTo(elementId) {
+    setTimeout(() => {
+      DOM.get(elementId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, CONFIG.ANIMATION_DELAY.SCROLL);
+  },
+};
 
-  filterButtonsDiv.innerHTML = '';
-  activeFilterIndices.clear();
+// ===================
+// ERROR HANDLING
+// ===================
+const ErrorHandler = {
+  show(message) {
+    const errorDiv = DOM.get('error');
+    errorDiv.textContent = message;
+    DOM.show(errorDiv);
+    DOM.get('results').classList.remove('show');
+  },
 
-  if (players.length === 0) {
-    filterContainer.style.display = 'none';
-    return;
-  }
+  hide() {
+    DOM.hide(DOM.get('error'));
+  },
 
-  filterContainer.style.display = 'block';
+  validate(players) {
+    if (!players || players.length === 0) {
+      this.show('Please enter player skill levels.');
+      return false;
+    }
 
-  players.forEach((num, index) => {
+    if (players.some((num) => isNaN(num) || num < 1 || num > 9)) {
+      this.show('All skill levels must be numbers between 1 and 9.');
+      return false;
+    }
+
+    if (players.length < CONFIG.TEAM_SIZE) {
+      this.show(`You must provide at least ${CONFIG.TEAM_SIZE} players.`);
+      return false;
+    }
+
+    if (players.length > CONFIG.MAX_PLAYERS) {
+      this.show(`Maximum of ${CONFIG.MAX_PLAYERS} players allowed per team.`);
+      return false;
+    }
+
+    return true;
+  },
+};
+
+// ===================
+// TEAM GENERATION
+// ===================
+const TeamGenerator = {
+  generate(players, gameType) {
+    const gameConfig = gameType === '8' ? GAME_TYPES.EIGHT_BALL : GAME_TYPES.NINE_BALL;
+    const validTeams = new Set();
+
+    for (const combo of Utils.combinations(players, CONFIG.TEAM_SIZE)) {
+      if (this.isValidTeam(combo, gameConfig.highRanks)) {
+        const sortedTeam = [...combo].sort((a, b) => a - b);
+        validTeams.add(JSON.stringify(sortedTeam));
+      }
+    }
+
+    return this.sortTeams(validTeams);
+  },
+
+  isValidTeam(combo, highRanks) {
+    const total = combo.reduce((sum, num) => sum + num, 0);
+    const highCount = combo.filter((num) => highRanks.has(num)).length;
+    return total <= CONFIG.MAX_TOTAL && highCount <= 2;
+  },
+
+  sortTeams(validTeams) {
+    return Array.from(validTeams)
+      .map((str) => JSON.parse(str))
+      .sort((a, b) => {
+        for (let i = 0; i < CONFIG.TEAM_SIZE; i++) {
+          if (a[i] !== b[i]) return a[i] - b[i];
+        }
+        return 0;
+      });
+  },
+};
+
+// ===================
+// FILTER SYSTEM
+// ===================
+const FilterSystem = {
+  create(players) {
+    const filterButtonsDiv = DOM.get('filterButtons');
+    const filterContainer = DOM.get('filterContainer');
+
+    filterButtonsDiv.innerHTML = '';
+    State.activeFilterIndices.clear();
+
+    if (players.length === 0) {
+      DOM.hide(filterContainer);
+      return;
+    }
+
+    DOM.show(filterContainer);
+    players.forEach((num, index) => this.createButton(num, index, filterButtonsDiv));
+    this.updateDisplay();
+  },
+
+  createButton(num, index, container) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'filter-btn';
     btn.textContent = num;
     btn.dataset.index = index;
 
-    btn.addEventListener('click', () => {
-      toggleFilter(index);
+    const handleClick = () => {
+      this.toggle(index);
       btn.blur();
-    });
-
-    btn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      toggleFilter(index);
-      btn.blur();
-    });
-
-    filterButtonsDiv.appendChild(btn);
-  });
-
-  updateFilterDisplay();
-}
-
-function toggleFilter(index) {
-  if (activeFilterIndices.has(index)) {
-    activeFilterIndices.delete(index);
-  } else {
-    activeFilterIndices.add(index);
-  }
-
-  updateFilterDisplay();
-  applyFilters();
-}
-
-function updateFilterDisplay() {
-  const filterButtons = document.querySelectorAll('.filter-btn');
-  filterButtons.forEach((btn) => {
-    const index = parseInt(btn.dataset.index);
-    if (activeFilterIndices.has(index)) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-}
-
-function applyFilters() {
-  if (activeFilterIndices.size === 0) {
-    // No filters active, show all teams
-    renderTeams(allGeneratedTeams);
-    updateFilterCount(allGeneratedTeams.length, allGeneratedTeams.length);
-    return;
-  }
-
-  // Build requirements map from active filters
-  const requirements = {};
-  activeFilterIndices.forEach((idx) => {
-    const num = playersList[idx];
-    requirements[num] = (requirements[num] || 0) + 1;
-  });
-
-  // Filter teams based on requirements
-  const filteredTeams = allGeneratedTeams.filter((team) => {
-    // Count occurrences in this team
-    const teamCounts = {};
-    team.forEach((num) => {
-      teamCounts[num] = (teamCounts[num] || 0) + 1;
-    });
-
-    // Check if team meets all requirements
-    return Object.entries(requirements).every(([num, required]) => {
-      return (teamCounts[num] || 0) >= required;
-    });
-  });
-
-  renderTeams(filteredTeams);
-  updateFilterCount(filteredTeams.length, allGeneratedTeams.length);
-}
-
-function updateFilterCount(filtered, total) {
-  const filterCountDiv = document.getElementById('filterCount');
-  if (activeFilterIndices.size > 0) {
-    filterCountDiv.textContent = `Showing ${filtered} of ${total} teams`;
-  } else {
-    filterCountDiv.textContent = '';
-  }
-}
-
-function renderTeams(teams) {
-  const teamsListDiv = document.getElementById('teamsList');
-
-  // Fade out existing content
-  teamsListDiv.style.opacity = '0';
-
-  setTimeout(() => {
-    teamsListDiv.innerHTML = '';
-
-    if (teams.length === 0) {
-      teamsListDiv.innerHTML = '<div class="no-results">No plays match the selected filters.</div>';
-    } else {
-      teams.forEach((team, index) => {
-        const total = team.reduce((sum, num) => sum + num, 0);
-        const card = document.createElement('div');
-        card.className = 'team-card';
-        card.style.animationDelay = `${index * 0.02}s`;
-        card.innerHTML = `
-          <div class="team-numbers">${team.join(', ')}</div>
-          <div class="team-total">Total: ${total}</div>
-        `;
-        teamsListDiv.appendChild(card);
-      });
-    }
-
-    // Fade in new content
-    setTimeout(() => {
-      teamsListDiv.style.opacity = '1';
-    }, 50);
-  }, 150);
-}
-
-function displayResults(teams, gameType, players) {
-  const resultsDiv = document.getElementById('results');
-  const teamCountSpan = document.getElementById('teamCount');
-  const copyAllBtn = document.getElementById('copyAllBtn');
-
-  // Store globally for filtering
-  allGeneratedTeams = teams;
-  playersList = players;
-  activeFilterIndices.clear();
-
-  teamCountSpan.textContent = `${teams.length} unique team${teams.length !== 1 ? 's' : ''}`;
-
-  // Setup copy all button
-  copyAllBtn.style.display = teams.length > 0 ? 'inline-flex' : 'none';
-  copyAllBtn.onclick = () => {
-    const allTeams = teams.map((team) => team.join(' ')).join('\n');
-    navigator.clipboard
-      .writeText(allTeams)
-      .then(() => {
-        const originalHTML = copyAllBtn.innerHTML;
-        copyAllBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-        copyAllBtn.style.color = 'var(--success-color)';
-        setTimeout(() => {
-          copyAllBtn.innerHTML = originalHTML;
-          copyAllBtn.style.color = '';
-        }, 1500);
-      })
-      .catch(() => {
-        // Silently fail - clipboard not available
-        console.log('Clipboard not available');
-      });
-  };
-
-  // Create filter buttons
-  createFilterButtons(players);
-
-  // Render initial teams
-  renderTeams(teams);
-
-  // Show results section, hide form section
-  document.getElementById('formSection').style.display = 'none';
-  document.getElementById('resultsSection').style.display = 'block';
-
-  resultsDiv.classList.add('show');
-
-  // Smooth scroll to results
-  setTimeout(() => {
-    document
-      .getElementById('resultsSection')
-      .scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
-}
-
-// Number pad functionality
-function initNumberPad() {
-  const playersInput = document.getElementById('players');
-  const numberButtons = document.querySelectorAll('.number-btn');
-  const clearBtn = document.getElementById('clear');
-  const backspaceBtn = document.getElementById('backspace');
-
-  numberButtons.forEach((btn) => {
-    const handleNumberClick = () => {
-      const currentValue = playersInput.value.trim();
-      const currentPlayers = currentValue ? currentValue.split(/\s+/).filter((n) => n) : [];
-
-      // Check if we've reached the max player limit
-      if (currentPlayers.length >= MAX_PLAYERS) {
-        showError(`Maximum of ${MAX_PLAYERS} players allowed per team.`);
-        btn.blur();
-        return;
-      }
-
-      const number = btn.getAttribute('data-number');
-
-      // Add space if there's already content
-      playersInput.value = currentValue ? currentValue + ' ' + number : number;
-
-      // Update button states
-      updateNumberPadState();
-
-      // Add visual feedback
-      btn.style.transform = 'scale(0.95)';
-      setTimeout(() => {
-        btn.style.transform = '';
-      }, 100);
-
-      // Blur button to prevent stuck hover state on mobile
-      btn.blur();
-
-      // Focus input to show cursor
-      playersInput.focus();
     };
 
-    btn.addEventListener('click', handleNumberClick);
+    btn.addEventListener('click', handleClick);
     btn.addEventListener('touchend', (e) => {
       e.preventDefault();
-      handleNumberClick();
+      handleClick();
     });
-  });
 
-  clearBtn.addEventListener('click', () => {
-    playersInput.value = '';
-    clearBtn.blur();
-    playersInput.focus();
-    hideError();
-    updateNumberPadState();
-  });
+    container.appendChild(btn);
+  },
 
-  backspaceBtn.addEventListener('click', () => {
-    const currentValue = playersInput.value.trim();
-    const numbers = currentValue.split(/\s+/).filter((n) => n);
-
-    if (numbers.length > 0) {
-      numbers.pop();
-      playersInput.value = numbers.join(' ');
-    }
-
-    updateNumberPadState();
-    backspaceBtn.blur();
-    playersInput.focus();
-  });
-
-  // Allow keyboard input as well
-  playersInput.addEventListener('keydown', (e) => {
-    // Allow backspace, delete, arrow keys, tab
-    if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-      return;
-    }
-
-    // Allow Ctrl/Cmd + A, C, V, X
-    if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
-      return;
-    }
-
-    // Only allow numbers and space
-    if (!/^[1-9\s]$/.test(e.key)) {
-      e.preventDefault();
-    }
-  });
-
-  // Update button states when user types
-  playersInput.addEventListener('input', () => {
-    updateNumberPadState();
-  });
-}
-
-// Update number pad button states based on player count
-function updateNumberPadState() {
-  const playersInput = document.getElementById('players');
-  const currentValue = playersInput.value.trim();
-  const currentPlayers = currentValue ? currentValue.split(/\s+/).filter((n) => n) : [];
-  const numberButtons = document.querySelectorAll('.number-btn');
-  const playerCountSpan = document.getElementById('playerCount');
-
-  // Update player count display
-  if (playerCountSpan) {
-    const count = currentPlayers.length;
-    const color = count >= MAX_PLAYERS ? 'var(--accent-primary)' : 'var(--text-secondary)';
-    playerCountSpan.textContent = `(${count}/${MAX_PLAYERS})`;
-    playerCountSpan.style.color = color;
-  }
-
-  numberButtons.forEach((btn) => {
-    // Don't override game type restrictions
-    const number = parseInt(btn.getAttribute('data-number'));
-    const gameType = document.querySelector('input[name="gameType"]:checked').value;
-    const isRestrictedByGameType =
-      gameType === '8' && (number === 1 || number === 8 || number === 9);
-
-    if (!isRestrictedByGameType) {
-      if (currentPlayers.length >= MAX_PLAYERS) {
-        btn.disabled = true;
-        btn.style.opacity = '0.4';
-        btn.style.cursor = 'not-allowed';
-      } else {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-      }
-    }
-  });
-}
-
-// Update number pad availability based on game type
-function updateNumberPadVisibility(gameType) {
-  const numberButtons = document.querySelectorAll('.number-btn');
-
-  numberButtons.forEach((btn) => {
-    const number = parseInt(btn.getAttribute('data-number'));
-
-    if (gameType === '8') {
-      // 8-ball: disable 1, 8, and 9 (only 2-7 available)
-      if (number === 1 || number === 8 || number === 9) {
-        btn.disabled = true;
-        btn.style.opacity = '0.5';
-        btn.style.cursor = 'not-allowed';
-      } else {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.cursor = 'pointer';
-      }
+  toggle(index) {
+    if (State.activeFilterIndices.has(index)) {
+      State.activeFilterIndices.delete(index);
     } else {
-      // 9-ball: all numbers available (1-9)
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
+      State.activeFilterIndices.add(index);
     }
-  });
 
-  // Update button states after availability change
-  updateNumberPadState();
-}
+    this.updateDisplay();
+    this.apply();
+  },
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function () {
-  initNumberPad();
-
-  // Set initial number pad visibility
-  const initialGameType = document.querySelector('input[name="gameType"]:checked').value;
-  updateNumberPadVisibility(initialGameType);
-
-  // Update number pad when game type changes
-  document.querySelectorAll('input[name="gameType"]').forEach((radio) => {
-    radio.addEventListener('change', (e) => {
-      updateNumberPadVisibility(e.target.value);
-      hideError();
+  updateDisplay() {
+    DOM.getAll('.filter-btn').forEach((btn) => {
+      const index = parseInt(btn.dataset.index);
+      btn.classList.toggle('active', State.activeFilterIndices.has(index));
     });
-  });
+  },
 
-  // Regenerate button handler
-  document.getElementById('regenerateBtn').addEventListener('click', () => {
-    // Reset filters
-    activeFilterIndices.clear();
-    allGeneratedTeams = [];
-    playersList = [];
-
-    // Hide results section, show form section
-    document.getElementById('resultsSection').style.display = 'none';
-    document.getElementById('formSection').style.display = 'block';
-
-    // Clear error if any
-    hideError();
-
-    // Scroll to form
-    setTimeout(() => {
-      document.getElementById('formSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  });
-
-  document.getElementById('teamForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    hideError();
-
-    const playersInput = document.getElementById('players').value.trim();
-    const gameType = document.querySelector('input[name="gameType"]:checked').value;
-
-    if (!playersInput) {
-      showError('Please enter player skill levels.');
+  apply() {
+    if (State.activeFilterIndices.size === 0) {
+      TeamRenderer.render(State.allGeneratedTeams);
+      this.updateCount(State.allGeneratedTeams.length, State.allGeneratedTeams.length);
       return;
     }
 
-    // Parse players
-    const playerStrings = playersInput.split(/\s+/);
-    const players = [];
+    const requirements = this.buildRequirements();
+    const filteredTeams = this.filterTeams(requirements);
 
-    for (const str of playerStrings) {
-      const num = parseInt(str, 10);
-      if (isNaN(num) || num < 1 || num > 9) {
-        showError('All skill levels must be numbers between 1 and 9.');
+    TeamRenderer.render(filteredTeams);
+    this.updateCount(filteredTeams.length, State.allGeneratedTeams.length);
+  },
+
+  buildRequirements() {
+    const requirements = {};
+    State.activeFilterIndices.forEach((idx) => {
+      const num = State.playersList[idx];
+      requirements[num] = (requirements[num] || 0) + 1;
+    });
+    return requirements;
+  },
+
+  filterTeams(requirements) {
+    return State.allGeneratedTeams.filter((team) => {
+      const teamCounts = Utils.countOccurrences(team);
+      return Object.entries(requirements).every(
+        ([num, required]) => (teamCounts[num] || 0) >= required,
+      );
+    });
+  },
+
+  updateCount(filtered, total) {
+    const filterCountDiv = DOM.get('filterCount');
+    filterCountDiv.textContent =
+      State.activeFilterIndices.size > 0 ? `Showing ${filtered} of ${total} teams` : '';
+  },
+};
+
+// ===================
+// TEAM RENDERER
+// ===================
+const TeamRenderer = {
+  render(teams) {
+    const teamsListDiv = DOM.get('teamsList');
+
+    DOM.setOpacity(teamsListDiv, '0');
+
+    setTimeout(() => {
+      teamsListDiv.innerHTML =
+        teams.length === 0 ? this.createNoResultsHTML() : this.createTeamCardsHTML(teams);
+
+      setTimeout(() => {
+        DOM.setOpacity(teamsListDiv, '1');
+      }, CONFIG.ANIMATION_DELAY.FADE_IN);
+    }, CONFIG.ANIMATION_DELAY.FADE_OUT);
+  },
+
+  createNoResultsHTML() {
+    return '<div class="no-results">No plays match the selected filters.</div>';
+  },
+
+  createTeamCardsHTML(teams) {
+    return teams.map((team, index) => this.createTeamCard(team, index)).join('');
+  },
+
+  createTeamCard(team, index) {
+    const total = team.reduce((sum, num) => sum + num, 0);
+    const delay = index * CONFIG.ANIMATION_DELAY.CARD_STAGGER;
+
+    return `
+      <div class="team-card" style="animation-delay: ${delay}s">
+        <div class="team-numbers">${team.join(', ')}</div>
+        <div class="team-total">Total: ${total}</div>
+      </div>
+    `;
+  },
+};
+
+// ===================
+// COPY FUNCTIONALITY
+// ===================
+const CopyHandler = {
+  setup(teams) {
+    const copyAllBtn = DOM.get('copyAllBtn');
+    copyAllBtn.style.display = teams.length > 0 ? 'inline-flex' : 'none';
+    copyAllBtn.onclick = () => this.copyAllTeams(teams);
+  },
+
+  copyAllTeams(teams) {
+    const allTeams = teams.map((team) => team.join(' ')).join('\n');
+    const copyAllBtn = DOM.get('copyAllBtn');
+
+    navigator.clipboard
+      .writeText(allTeams)
+      .then(() => this.showSuccess(copyAllBtn))
+      .catch(() => console.log('Clipboard not available'));
+  },
+
+  showSuccess(button) {
+    const originalHTML = button.innerHTML;
+    button.innerHTML = SVG.CHECKMARK;
+    button.style.color = 'var(--success-color)';
+
+    setTimeout(() => {
+      button.innerHTML = originalHTML;
+      button.style.color = '';
+    }, CONFIG.ANIMATION_DELAY.COPY_SUCCESS);
+  },
+};
+
+// ===================
+// RESULTS DISPLAY
+// ===================
+const ResultsDisplay = {
+  show(teams, gameType, players) {
+    State.allGeneratedTeams = teams;
+    State.playersList = players;
+    State.activeFilterIndices.clear();
+
+    this.updateTeamCount(teams);
+    CopyHandler.setup(teams);
+    FilterSystem.create(players);
+    TeamRenderer.render(teams);
+    this.toggleSections();
+
+    DOM.get('results').classList.add('show');
+    Utils.scrollTo('resultsSection');
+  },
+
+  updateTeamCount(teams) {
+    const teamCountSpan = DOM.get('teamCount');
+    teamCountSpan.textContent = `${teams.length} unique team${teams.length !== 1 ? 's' : ''}`;
+  },
+
+  toggleSections() {
+    DOM.get('formSection').style.display = 'none';
+    DOM.get('resultsSection').style.display = 'block';
+  },
+
+  reset() {
+    State.reset();
+    DOM.get('resultsSection').style.display = 'none';
+    DOM.get('formSection').style.display = 'block';
+    ErrorHandler.hide();
+    Utils.scrollTo('formSection');
+  },
+};
+
+// ===================
+// NUMBER PAD
+// ===================
+const NumberPad = {
+  init() {
+    this.bindButtons();
+    this.bindControls();
+    this.bindKeyboard();
+    this.updateState();
+  },
+
+  bindButtons() {
+    DOM.getAll('.number-btn').forEach((btn) => {
+      const handleClick = () => {
+        this.handleNumberClick(btn);
+        btn.blur();
+      };
+
+      btn.addEventListener('click', handleClick);
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleClick();
+      });
+    });
+  },
+
+  handleNumberClick(btn) {
+    const playersInput = DOM.get('players');
+    const currentValue = playersInput.value.trim();
+    const currentPlayers = Utils.parsePlayerInput(currentValue);
+
+    if (currentPlayers.length >= CONFIG.MAX_PLAYERS) {
+      ErrorHandler.show(`Maximum of ${CONFIG.MAX_PLAYERS} players allowed per team.`);
+      return;
+    }
+
+    const number = btn.getAttribute('data-number');
+    playersInput.value = currentValue ? `${currentValue} ${number}` : number;
+
+    this.updateState();
+    this.animateButton(btn);
+    playersInput.focus();
+  },
+
+  animateButton(btn) {
+    btn.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      btn.style.transform = '';
+    }, CONFIG.ANIMATION_DELAY.BUTTON_FEEDBACK);
+  },
+
+  bindControls() {
+    const playersInput = DOM.get('players');
+    const clearBtn = DOM.get('clear');
+    const backspaceBtn = DOM.get('backspace');
+
+    clearBtn.addEventListener('click', () => {
+      playersInput.value = '';
+      clearBtn.blur();
+      playersInput.focus();
+      ErrorHandler.hide();
+      this.updateState();
+    });
+
+    backspaceBtn.addEventListener('click', () => {
+      const currentValue = playersInput.value.trim();
+      const numbers = Utils.parsePlayerInput(currentValue);
+
+      if (numbers.length > 0) {
+        numbers.pop();
+        playersInput.value = numbers.join(' ');
+      }
+
+      this.updateState();
+      backspaceBtn.blur();
+      playersInput.focus();
+    });
+  },
+
+  bindKeyboard() {
+    const playersInput = DOM.get('players');
+
+    playersInput.addEventListener('keydown', (e) => {
+      if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
         return;
       }
-      players.push(num);
-    }
 
-    if (players.length < TEAM_SIZE) {
-      showError(`You must provide at least ${TEAM_SIZE} players.`);
-      return;
-    }
+      if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
+        return;
+      }
 
-    if (players.length > MAX_PLAYERS) {
-      showError(`Maximum of ${MAX_PLAYERS} players allowed per team.`);
-      return;
-    }
+      if (!/^[1-9\s]$/.test(e.key)) {
+        e.preventDefault();
+      }
+    });
 
-    // Generate teams
-    const teams = generateTeams(players, gameType);
-    displayResults(teams, gameType, players);
-  });
+    playersInput.addEventListener('input', () => this.updateState());
+  },
 
-  // Allow Enter key in input to submit
-  document.getElementById('players').addEventListener('keypress', function (e) {
-    if (e.key === 'Enter') {
+  updateState() {
+    const playersInput = DOM.get('players');
+    const currentPlayers = Utils.parsePlayerInput(playersInput.value);
+
+    this.updatePlayerCount(currentPlayers.length);
+    this.updateButtonStates(currentPlayers.length);
+  },
+
+  updatePlayerCount(count) {
+    const playerCountSpan = DOM.get('playerCount');
+    if (!playerCountSpan) return;
+
+    const color = count >= CONFIG.MAX_PLAYERS ? 'var(--accent-primary)' : 'var(--text-secondary)';
+    playerCountSpan.textContent = `(${count}/${CONFIG.MAX_PLAYERS})`;
+    playerCountSpan.style.color = color;
+  },
+
+  updateButtonStates(playerCount) {
+    const gameType = document.querySelector('input[name="gameType"]:checked').value;
+
+    DOM.getAll('.number-btn').forEach((btn) => {
+      const number = parseInt(btn.getAttribute('data-number'));
+      const isRestrictedByGameType =
+        gameType === '8' && (number === 1 || number === 8 || number === 9);
+
+      if (!isRestrictedByGameType) {
+        this.setButtonState(btn, playerCount >= CONFIG.MAX_PLAYERS);
+      }
+    });
+  },
+
+  setButtonState(btn, disabled) {
+    btn.disabled = disabled;
+    btn.style.opacity = disabled ? '0.4' : '1';
+    btn.style.cursor = disabled ? 'not-allowed' : 'pointer';
+  },
+
+  updateVisibility(gameType) {
+    const gameConfig = gameType === '8' ? GAME_TYPES.EIGHT_BALL : GAME_TYPES.NINE_BALL;
+
+    DOM.getAll('.number-btn').forEach((btn) => {
+      const number = parseInt(btn.getAttribute('data-number'));
+      const isValid = gameConfig.validNumbers.has(number);
+
+      this.setButtonState(btn, !isValid);
+    });
+
+    this.updateState();
+  },
+};
+
+// ===================
+// FORM HANDLER
+// ===================
+const FormHandler = {
+  init() {
+    const form = DOM.get('teamForm');
+
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
-      document.getElementById('teamForm').dispatchEvent(new Event('submit'));
+      this.handleSubmit();
+    });
+
+    DOM.get('players').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        form.dispatchEvent(new Event('submit'));
+      }
+    });
+  },
+
+  handleSubmit() {
+    ErrorHandler.hide();
+
+    const playersInput = DOM.get('players').value;
+    const gameType = document.querySelector('input[name="gameType"]:checked').value;
+    const players = Utils.parsePlayerInput(playersInput);
+
+    if (!ErrorHandler.validate(players)) {
+      return;
     }
-  });
-});
+
+    const teams = TeamGenerator.generate(players, gameType);
+    ResultsDisplay.show(teams, gameType, players);
+  },
+};
+
+// ===================
+// GAME TYPE HANDLER
+// ===================
+const GameTypeHandler = {
+  init() {
+    const initialGameType = document.querySelector('input[name="gameType"]:checked').value;
+    NumberPad.updateVisibility(initialGameType);
+
+    DOM.getAll('input[name="gameType"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        NumberPad.updateVisibility(e.target.value);
+        ErrorHandler.hide();
+      });
+    });
+  },
+};
+
+// ===================
+// APP INITIALIZATION
+// ===================
+const App = {
+  init() {
+    NumberPad.init();
+    GameTypeHandler.init();
+    FormHandler.init();
+    this.bindRegenerateButton();
+  },
+
+  bindRegenerateButton() {
+    DOM.get('regenerateBtn').addEventListener('click', () => {
+      ResultsDisplay.reset();
+    });
+  },
+};
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', () => App.init());
