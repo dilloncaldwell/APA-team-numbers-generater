@@ -38,11 +38,13 @@ const SVG = {
 // =================
 const State = {
   allGeneratedTeams: [],
+  currentDisplayedTeams: [],
   playersList: [],
   activeFilterIndices: new Set(),
 
   reset() {
     this.allGeneratedTeams = [];
+    this.currentDisplayedTeams = [];
     this.playersList = [];
     this.activeFilterIndices.clear();
   },
@@ -260,16 +262,20 @@ const FilterSystem = {
 
   apply() {
     if (State.activeFilterIndices.size === 0) {
+      State.currentDisplayedTeams = State.allGeneratedTeams;
       TeamRenderer.render(State.allGeneratedTeams);
       this.updateCount(State.allGeneratedTeams.length, State.allGeneratedTeams.length);
+      CopyHandler.updateTeams(State.allGeneratedTeams);
       return;
     }
 
     const requirements = this.buildRequirements();
     const filteredTeams = this.filterTeams(requirements);
 
+    State.currentDisplayedTeams = filteredTeams;
     TeamRenderer.render(filteredTeams);
     this.updateCount(filteredTeams.length, State.allGeneratedTeams.length);
+    CopyHandler.updateTeams(filteredTeams);
   },
 
   buildRequirements() {
@@ -344,11 +350,16 @@ const CopyHandler = {
   setup(teams) {
     const copyAllBtn = DOM.get('copyAllBtn');
     copyAllBtn.style.display = teams.length > 0 ? 'inline-flex' : 'none';
-    copyAllBtn.onclick = () => this.copyAllTeams(teams);
+    copyAllBtn.onclick = () => this.copyAllTeams();
   },
 
-  copyAllTeams(teams) {
-    const allTeams = teams.map((team) => team.join(' ')).join('\n');
+  updateTeams(teams) {
+    const copyAllBtn = DOM.get('copyAllBtn');
+    copyAllBtn.style.display = teams.length > 0 ? 'inline-flex' : 'none';
+  },
+
+  copyAllTeams() {
+    const allTeams = State.currentDisplayedTeams.map((team) => team.join(' ')).join('\n');
     const copyAllBtn = DOM.get('copyAllBtn');
 
     navigator.clipboard
@@ -375,6 +386,7 @@ const CopyHandler = {
 const ResultsDisplay = {
   show(teams, gameType, players) {
     State.allGeneratedTeams = teams;
+    State.currentDisplayedTeams = teams;
     State.playersList = players;
     State.activeFilterIndices.clear();
 
