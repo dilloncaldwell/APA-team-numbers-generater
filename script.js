@@ -585,46 +585,45 @@ const NumberPad = {
 
   bindButtons() {
     DOM.getAll('.number-btn').forEach((btn) => {
+      let touchStartY = 0;
+      let touchStartX = 0;
+      let touchStartTime = 0;
+      let hasMoved = false;
+
       const handleClick = () => {
         this.handleNumberClick(btn);
         btn.blur();
       };
 
       // Track touch start
-      btn.addEventListener(
-        'touchstart',
-        (e) => {
-          this.touchStartY = e.touches[0].clientY;
-          this.touchStartTime = Date.now();
-          this.isTouchMove = false;
-        },
-        { passive: true },
-      );
+      btn.addEventListener('touchstart', (e) => {
+        touchStartY = e.touches[0].clientY;
+        touchStartX = e.touches[0].clientX;
+        touchStartTime = Date.now();
+        hasMoved = false;
+      });
 
-      // Track if user is scrolling
-      btn.addEventListener(
-        'touchmove',
-        (e) => {
-          const touchMoveY = e.touches[0].clientY;
-          const deltaY = Math.abs(touchMoveY - this.touchStartY);
+      // Track if user is scrolling/moving
+      btn.addEventListener('touchmove', (e) => {
+        const touchY = e.touches[0].clientY;
+        const touchX = e.touches[0].clientX;
+        const deltaY = Math.abs(touchY - touchStartY);
+        const deltaX = Math.abs(touchX - touchStartX);
 
-          // If moved more than 10px, consider it a scroll
-          if (deltaY > 10) {
-            this.isTouchMove = true;
-          }
-        },
-        { passive: true },
-      );
+        // If moved more than 5px in any direction, consider it a scroll/drag
+        if (deltaY > 5 || deltaX > 5) {
+          hasMoved = true;
+        }
+      });
 
-      // Only trigger on touchend if not scrolling
+      // Only trigger on touchend if not scrolling/moving
       btn.addEventListener('touchend', (e) => {
-        const touchDuration = Date.now() - this.touchStartTime;
+        const touchDuration = Date.now() - touchStartTime;
 
-        // Prevent click if:
-        // - User was scrolling
-        // - Touch was too quick (< 50ms, likely accidental)
-        if (!this.isTouchMove && touchDuration >= 50) {
+        // Prevent click if user moved or touch was too short
+        if (!hasMoved && touchDuration >= 50 && touchDuration < 1000) {
           e.preventDefault();
+          e.stopPropagation();
           handleClick();
         }
       });
@@ -691,24 +690,54 @@ const NumberPad = {
       playersInput.focus();
     };
 
-    // Clear button
+    // Clear button with scroll protection
+    let clearTouchStartY = 0;
+    let clearHasMoved = false;
+
+    clearBtn.addEventListener('touchstart', (e) => {
+      clearTouchStartY = e.touches[0].clientY;
+      clearHasMoved = false;
+    });
+
+    clearBtn.addEventListener('touchmove', (e) => {
+      const deltaY = Math.abs(e.touches[0].clientY - clearTouchStartY);
+      if (deltaY > 5) clearHasMoved = true;
+    });
+
+    clearBtn.addEventListener('touchend', (e) => {
+      if (!clearHasMoved) {
+        e.preventDefault();
+        handleClear();
+      }
+    });
+
     clearBtn.addEventListener('click', (e) => {
       if (e.detail !== 0) handleClear();
     });
 
-    clearBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      handleClear();
+    // Backspace button with scroll protection
+    let backspaceTouchStartY = 0;
+    let backspaceHasMoved = false;
+
+    backspaceBtn.addEventListener('touchstart', (e) => {
+      backspaceTouchStartY = e.touches[0].clientY;
+      backspaceHasMoved = false;
     });
 
-    // Backspace button
-    backspaceBtn.addEventListener('click', (e) => {
-      if (e.detail !== 0) handleBackspace();
+    backspaceBtn.addEventListener('touchmove', (e) => {
+      const deltaY = Math.abs(e.touches[0].clientY - backspaceTouchStartY);
+      if (deltaY > 5) backspaceHasMoved = true;
     });
 
     backspaceBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      handleBackspace();
+      if (!backspaceHasMoved) {
+        e.preventDefault();
+        handleBackspace();
+      }
+    });
+
+    backspaceBtn.addEventListener('click', (e) => {
+      if (e.detail !== 0) handleBackspace();
     });
   },
 

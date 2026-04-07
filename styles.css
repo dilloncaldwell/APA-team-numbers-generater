@@ -552,7 +552,7 @@ button[type='submit']:active {
   gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
   margin-bottom: var(--spacing-md);
-  touch-action: manipulation;
+  touch-action: pan-y;
 }
 
 .number-btn {
@@ -573,7 +573,7 @@ button[type='submit']:active {
   align-items: center;
   justify-content: center;
   opacity: 1;
-  touch-action: manipulation;
+  touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
