@@ -37,16 +37,93 @@ const SVG = {
 // STATE
 // =================
 const State = {
-  allGeneratedTeams: [],
-  currentDisplayedTeams: [],
-  playersList: [],
-  activeFilterIndices: new Set(),
+  currentTeam: 'myTeam', // 'myTeam' or 'opponent'
+  teams: {
+    myTeam: {
+      allGeneratedTeams: [],
+      currentDisplayedTeams: [],
+      playersList: [],
+      filterStates: new Map(), // index -> 'normal' | 'required' | 'excluded'
+      gameType: '8',
+    },
+    opponent: {
+      allGeneratedTeams: [],
+      currentDisplayedTeams: [],
+      playersList: [],
+      filterStates: new Map(),
+      gameType: '8',
+    },
+  },
+
+  getCurrentTeamData() {
+    return this.teams[this.currentTeam];
+  },
 
   reset() {
-    this.allGeneratedTeams = [];
-    this.currentDisplayedTeams = [];
-    this.playersList = [];
-    this.activeFilterIndices.clear();
+    this.teams.myTeam = {
+      allGeneratedTeams: [],
+      currentDisplayedTeams: [],
+      playersList: [],
+      filterStates: new Map(),
+      gameType: '8',
+    };
+    this.teams.opponent = {
+      allGeneratedTeams: [],
+      currentDisplayedTeams: [],
+      playersList: [],
+      filterStates: new Map(),
+      gameType: '8',
+    };
+  },
+};
+
+// ===================
+// LOCAL STORAGE
+// ===================
+const Storage = {
+  KEYS: {
+    MY_TEAM_STATE: 'apa_myTeam_state',
+    OPPONENT_STATE: 'apa_opponent_state',
+  },
+
+  saveTeamState(team, teamData) {
+    const stateKey = team === 'myTeam' ? this.KEYS.MY_TEAM_STATE : this.KEYS.OPPONENT_STATE;
+
+    const state = {
+      allGeneratedTeams: teamData.allGeneratedTeams,
+      playersList: teamData.playersList,
+      gameType: teamData.gameType,
+      filterStates: Array.from(teamData.filterStates.entries()),
+      playersInput: DOM.get('players').value,
+    };
+
+    localStorage.setItem(stateKey, JSON.stringify(state));
+  },
+
+  loadTeamState(team) {
+    const stateKey = team === 'myTeam' ? this.KEYS.MY_TEAM_STATE : this.KEYS.OPPONENT_STATE;
+    const savedState = localStorage.getItem(stateKey);
+
+    if (!savedState) {
+      return null;
+    }
+
+    try {
+      const state = JSON.parse(savedState);
+      return {
+        allGeneratedTeams: state.allGeneratedTeams || [],
+        playersList: state.playersList || [],
+        gameType: state.gameType || '8',
+        filterStates: new Map(state.filterStates || []),
+        playersInput: state.playersInput || '',
+      };
+    } catch (e) {
+      return null;
+    }
+  },
+
+  clear() {
+    Object.values(this.KEYS).forEach((key) => localStorage.removeItem(key));
   },
 };
 
@@ -204,12 +281,17 @@ const TeamGenerator = {
 // FILTER SYSTEM
 // ===================
 const FilterSystem = {
-  create(players) {
+  create(players, preserveFilters = true) {
     const filterButtonsDiv = DOM.get('filterButtons');
     const filterContainer = DOM.get('filterContainer');
+    const teamData = State.getCurrentTeamData();
 
     filterButtonsDiv.innerHTML = '';
-    State.activeFilterIndices.clear();
+
+    // Only clear filters if explicitly told to (new generation)
+    if (!preserveFilters) {
+      teamData.filterStates.clear();
+    }
 
     if (players.length === 0) {
       DOM.hide(filterContainer);
@@ -229,7 +311,7 @@ const FilterSystem = {
     btn.dataset.index = index;
 
     const handleClick = () => {
-      this.toggle(index);
+      this.cycle(index);
       btn.blur();
     };
 
@@ -242,11 +324,24 @@ const FilterSystem = {
     container.appendChild(btn);
   },
 
-  toggle(index) {
-    if (State.activeFilterIndices.has(index)) {
-      State.activeFilterIndices.delete(index);
+  cycle(index) {
+    const teamData = State.getCurrentTeamData();
+    const currentState = teamData.filterStates.get(index) || 'normal';
+
+    // Cycle: normal -> required -> excluded -> normal
+    let newState;
+    if (currentState === 'normal') {
+      newState = 'required';
+    } else if (currentState === 'required') {
+      newState = 'excluded';
     } else {
-      State.activeFilterIndices.add(index);
+      newState = 'normal';
+    }
+
+    if (newState === 'normal') {
+      teamData.filterStates.delete(index);
+    } else {
+      teamData.filterStates.set(index, newState);
     }
 
     this.updateDisplay();
@@ -254,52 +349,90 @@ const FilterSystem = {
   },
 
   updateDisplay() {
+    const teamData = State.getCurrentTeamData();
+
     DOM.getAll('.filter-btn').forEach((btn) => {
       const index = parseInt(btn.dataset.index);
-      btn.classList.toggle('active', State.activeFilterIndices.has(index));
+      const state = teamData.filterStates.get(index) || 'normal';
+
+      btn.classList.remove('required', 'excluded');
+      if (state !== 'normal') {
+        btn.classList.add(state);
+      }
     });
   },
 
   apply() {
-    if (State.activeFilterIndices.size === 0) {
-      State.currentDisplayedTeams = State.allGeneratedTeams;
-      TeamRenderer.render(State.allGeneratedTeams);
-      this.updateCount(State.allGeneratedTeams.length, State.allGeneratedTeams.length);
-      CopyHandler.updateTeams(State.allGeneratedTeams);
+    const teamData = State.getCurrentTeamData();
+
+    if (teamData.filterStates.size === 0) {
+      teamData.currentDisplayedTeams = teamData.allGeneratedTeams;
+      TeamRenderer.render(teamData.allGeneratedTeams);
+      this.updateCount(teamData.allGeneratedTeams.length, teamData.allGeneratedTeams.length);
+      CopyHandler.updateTeams(teamData.allGeneratedTeams);
+      Storage.saveTeamState(State.currentTeam, teamData);
       return;
     }
 
-    const requirements = this.buildRequirements();
-    const filteredTeams = this.filterTeams(requirements);
+    const { required, excluded } = this.buildRequirements();
+    const filteredTeams = this.filterTeams(required, excluded);
 
-    State.currentDisplayedTeams = filteredTeams;
+    teamData.currentDisplayedTeams = filteredTeams;
     TeamRenderer.render(filteredTeams);
-    this.updateCount(filteredTeams.length, State.allGeneratedTeams.length);
+    this.updateCount(filteredTeams.length, teamData.allGeneratedTeams.length);
     CopyHandler.updateTeams(filteredTeams);
+    Storage.saveTeamState(State.currentTeam, teamData);
   },
 
   buildRequirements() {
-    const requirements = {};
-    State.activeFilterIndices.forEach((idx) => {
-      const num = State.playersList[idx];
-      requirements[num] = (requirements[num] || 0) + 1;
+    const teamData = State.getCurrentTeamData();
+    const required = {};
+    const excluded = {};
+
+    teamData.filterStates.forEach((state, idx) => {
+      const num = teamData.playersList[idx];
+
+      if (state === 'required') {
+        required[num] = (required[num] || 0) + 1;
+      } else if (state === 'excluded') {
+        excluded[num] = (excluded[num] || 0) + 1;
+      }
     });
-    return requirements;
+
+    return { required, excluded };
   },
 
-  filterTeams(requirements) {
-    return State.allGeneratedTeams.filter((team) => {
+  filterTeams(required, excluded) {
+    const teamData = State.getCurrentTeamData();
+
+    return teamData.allGeneratedTeams.filter((team) => {
       const teamCounts = Utils.countOccurrences(team);
-      return Object.entries(requirements).every(
-        ([num, required]) => (teamCounts[num] || 0) >= required,
+
+      // Check excluded counts: if we have 3 fours and excluded 1, max allowed is 2
+      for (const [num, excludedCount] of Object.entries(excluded)) {
+        const numValue = parseInt(num);
+        const teamCount = teamCounts[numValue] || 0;
+        const maxAllowed =
+          (Utils.countOccurrences(teamData.playersList)[numValue] || 0) - excludedCount;
+
+        if (teamCount > maxAllowed) {
+          return false;
+        }
+      }
+
+      // Check if team meets required number counts
+      return Object.entries(required).every(
+        ([num, requiredCount]) => (teamCounts[num] || 0) >= requiredCount,
       );
     });
   },
 
   updateCount(filtered, total) {
+    const teamData = State.getCurrentTeamData();
     const filterCountDiv = DOM.get('filterCount');
-    filterCountDiv.textContent =
-      State.activeFilterIndices.size > 0 ? `Showing ${filtered} of ${total} teams` : '';
+    const hasFilters = teamData.filterStates.size > 0;
+
+    filterCountDiv.textContent = hasFilters ? `Showing ${filtered} of ${total} teams` : '';
   },
 };
 
@@ -359,7 +492,8 @@ const CopyHandler = {
   },
 
   copyAllTeams() {
-    const allTeams = State.currentDisplayedTeams.map((team) => team.join(' ')).join('\n');
+    const teamData = State.getCurrentTeamData();
+    const allTeams = teamData.currentDisplayedTeams.map((team) => team.join(' ')).join('\n');
     const copyAllBtn = DOM.get('copyAllBtn');
 
     navigator.clipboard
@@ -385,19 +519,26 @@ const CopyHandler = {
 // ===================
 const ResultsDisplay = {
   show(teams, gameType, players) {
-    State.allGeneratedTeams = teams;
-    State.currentDisplayedTeams = teams;
-    State.playersList = players;
-    State.activeFilterIndices.clear();
+    const teamData = State.getCurrentTeamData();
+
+    teamData.allGeneratedTeams = teams;
+    teamData.currentDisplayedTeams = teams;
+    teamData.playersList = players;
+    teamData.filterStates.clear(); // Clear filters on new generation
+    teamData.gameType = gameType;
 
     this.updateTeamCount(teams);
     CopyHandler.setup(teams);
-    FilterSystem.create(players);
+    FilterSystem.create(players, false); // Clear filters on new generation
     TeamRenderer.render(teams);
+
     this.toggleSections();
 
     DOM.get('results').classList.add('show');
     Utils.scrollTo('resultsSection');
+
+    // Save complete team state to local storage
+    Storage.saveTeamState(State.currentTeam, teamData);
   },
 
   updateTeamCount(teams) {
@@ -411,7 +552,15 @@ const ResultsDisplay = {
   },
 
   reset() {
-    State.reset();
+    const teamData = State.getCurrentTeamData();
+    teamData.allGeneratedTeams = [];
+    teamData.currentDisplayedTeams = [];
+    teamData.playersList = [];
+    teamData.filterStates.clear();
+
+    // Save the cleared state
+    Storage.saveTeamState(State.currentTeam, teamData);
+
     DOM.get('resultsSection').style.display = 'none';
     DOM.get('formSection').style.display = 'block';
     ErrorHandler.hide();
@@ -623,6 +772,194 @@ const GameTypeHandler = {
 };
 
 // ===================
+// TEAM TAB HANDLER
+// ===================
+const TeamTabHandler = {
+  init() {
+    DOM.getAll('.team-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const team = tab.dataset.team;
+        this.switchTeam(team);
+      });
+    });
+
+    // Load saved data on init
+    this.loadSavedData();
+  },
+
+  switchTeam(team) {
+    if (State.currentTeam === team) return;
+
+    // Save current team state before switching
+    const currentTeamData = State.getCurrentTeamData();
+    if (currentTeamData.allGeneratedTeams.length > 0) {
+      Storage.saveTeamState(State.currentTeam, currentTeamData);
+    }
+
+    State.currentTeam = team;
+
+    // Update tab UI
+    DOM.getAll('.team-tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.team === team);
+    });
+
+    // Load saved data for this team
+    this.loadTeamData(team);
+  },
+
+  loadSavedData() {
+    // Load data for current team on page load
+    this.loadTeamData(State.currentTeam);
+  },
+
+  loadTeamData(team) {
+    const savedState = Storage.loadTeamState(team);
+    const playersInput = DOM.get('players');
+    const teamData = State.teams[team];
+
+    if (!savedState || savedState.allGeneratedTeams.length === 0) {
+      // No saved state or no teams generated, show form with saved input
+      playersInput.value = savedState ? savedState.playersInput : '';
+
+      if (savedState && savedState.gameType) {
+        const gameTypeRadio = document.querySelector(
+          `input[name="gameType"][value="${savedState.gameType}"]`,
+        );
+        if (gameTypeRadio) {
+          gameTypeRadio.checked = true;
+          NumberPad.updateVisibility(savedState.gameType);
+        }
+      }
+
+      NumberPad.updateState();
+      DOM.get('resultsSection').style.display = 'none';
+      DOM.get('formSection').style.display = 'block';
+      return;
+    }
+
+    // Restore team data from saved state
+    teamData.allGeneratedTeams = savedState.allGeneratedTeams;
+    teamData.currentDisplayedTeams = savedState.allGeneratedTeams;
+    teamData.playersList = savedState.playersList;
+    teamData.filterStates = savedState.filterStates;
+    teamData.gameType = savedState.gameType;
+
+    // Set form values
+    playersInput.value = savedState.playersInput;
+    const gameTypeRadio = document.querySelector(
+      `input[name="gameType"][value="${savedState.gameType}"]`,
+    );
+    if (gameTypeRadio) {
+      gameTypeRadio.checked = true;
+      NumberPad.updateVisibility(savedState.gameType);
+    }
+
+    NumberPad.updateState();
+
+    // Show results with saved filters
+    this.showExistingResults(teamData);
+  },
+
+  showExistingResults(teamData) {
+    DOM.get('formSection').style.display = 'none';
+    DOM.get('resultsSection').style.display = 'block';
+
+    ResultsDisplay.updateTeamCount(teamData.allGeneratedTeams);
+    CopyHandler.setup(teamData.allGeneratedTeams);
+    FilterSystem.create(teamData.playersList, true); // Preserve existing filters
+
+    // Update filter button display
+    FilterSystem.updateDisplay();
+
+    // Apply saved filters to show correct results
+    FilterSystem.apply();
+
+    DOM.get('results').classList.add('show');
+  },
+};
+
+// ===================
+// RESET DATA HANDLER
+// ===================
+const ResetDataHandler = {
+  init() {
+    const resetBtn = DOM.get('resetDataBtn');
+    const modal = DOM.get('resetModal');
+    const cancelBtn = DOM.get('cancelReset');
+    const confirmBtn = DOM.get('confirmReset');
+
+    // Open modal
+    resetBtn.addEventListener('click', () => {
+      this.showModal();
+    });
+
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+      this.hideModal();
+    });
+
+    // Confirm button
+    confirmBtn.addEventListener('click', () => {
+      this.hideModal();
+      this.resetAllData();
+    });
+
+    // Close on overlay click
+    modal.querySelector('.modal-overlay').addEventListener('click', () => {
+      this.hideModal();
+    });
+
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.style.display === 'flex') {
+        this.hideModal();
+      }
+    });
+  },
+
+  showModal() {
+    const modal = DOM.get('resetModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  },
+
+  hideModal() {
+    const modal = DOM.get('resetModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = '';
+  },
+
+  resetAllData() {
+    // Clear local storage
+    Storage.clear();
+
+    // Reset state
+    State.reset();
+    State.currentTeam = 'myTeam';
+
+    // Reset UI to My Team tab
+    DOM.getAll('.team-tab').forEach((tab) => {
+      tab.classList.toggle('active', tab.dataset.team === 'myTeam');
+    });
+
+    // Clear form
+    DOM.get('players').value = '';
+    const defaultGameType = document.querySelector('input[name="gameType"][value="8"]');
+    if (defaultGameType) {
+      defaultGameType.checked = true;
+      NumberPad.updateVisibility('8');
+    }
+
+    // Hide results
+    DOM.get('resultsSection').style.display = 'none';
+    DOM.get('formSection').style.display = 'block';
+
+    NumberPad.updateState();
+    ErrorHandler.hide();
+  },
+};
+
+// ===================
 // APP INITIALIZATION
 // ===================
 const App = {
@@ -630,6 +967,8 @@ const App = {
     NumberPad.init();
     GameTypeHandler.init();
     FormHandler.init();
+    TeamTabHandler.init();
+    ResetDataHandler.init();
     this.bindRegenerateButton();
   },
 

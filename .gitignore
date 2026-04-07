@@ -109,3 +109,6 @@ ENV/
 
 # Misc
 *.orig
+
+# testing checklist
+TESTING.md

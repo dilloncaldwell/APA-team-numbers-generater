@@ -27,8 +27,15 @@
             <li>Maximum of 2 high-ranked players per team</li>
             <li>8-ball: high ranks are 6 and 7</li>
             <li>9-ball: high ranks are 7, 8, and 9</li>
+            <li>Filter tips: Tap once to require, twice to exclude, three times to reset</li>
           </ul>
         </details>
+
+        <!-- Team Tabs -->
+        <div class="team-tabs">
+          <button type="button" class="team-tab active" data-team="myTeam">My Team</button>
+          <button type="button" class="team-tab" data-team="opponent">Opponent</button>
+        </div>
 
         <form id="teamForm">
           <div id="formSection">
@@ -132,7 +139,7 @@
               </div>
 
               <div class="filter-container" id="filterContainer" style="display: none">
-                <div class="filter-label">Filters:</div>
+                <div class="filter-label">Filters (Tap: Require → Exclude → Reset):</div>
                 <div class="filter-buttons" id="filterButtons"></div>
                 <div class="filter-count" id="filterCount"></div>
               </div>
@@ -140,12 +147,36 @@
 
             <div id="teamsList" class="teams-grid"></div>
           </div>
+
+          <button type="button" id="resetDataBtn" class="reset-data-btn">⚠️ Reset All Data</button>
         </div>
       </div>
 
       <footer>
         <p>Made for APA players by Dillon Caldwell</p>
       </footer>
+    </div>
+
+    <!-- Reset Confirmation Modal -->
+    <div id="resetModal" class="modal" style="display: none">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚠️ Reset All Data</h3>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to reset all saved data for both teams?</p>
+          <p class="modal-warning">
+            This will clear all players, results, and filters. This action cannot be undone.
+          </p>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancelReset" class="modal-btn modal-btn-cancel">Cancel</button>
+          <button type="button" id="confirmReset" class="modal-btn modal-btn-confirm">
+            Reset All Data
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
