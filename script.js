@@ -1013,14 +1013,38 @@ const ResetDataHandler = {
 
   showModal() {
     const modal = DOM.get('resetModal');
-    modal.style.display = 'flex';
+    const scrollY = window.scrollY;
+
+    // Lock body scroll and maintain position
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
     document.body.style.overflow = 'hidden';
+
+    // Store scroll position
+    document.body.setAttribute('data-scroll-y', scrollY);
+
+    modal.style.display = 'flex';
   },
 
   hideModal() {
     const modal = DOM.get('resetModal');
     modal.style.display = 'none';
+
+    // Restore body scroll and position
+    const scrollY = document.body.getAttribute('data-scroll-y');
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
     document.body.style.overflow = '';
+
+    // Restore scroll position
+    if (scrollY) {
+      window.scrollTo(0, parseInt(scrollY, 10));
+      document.body.removeAttribute('data-scroll-y');
+    }
   },
 
   resetAllData() {

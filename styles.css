@@ -1134,6 +1134,8 @@ button[type='submit']:active {
   justify-content: center;
   padding: var(--spacing-lg);
   animation: fadeIn 0.2s ease;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-overlay {
@@ -1155,6 +1157,9 @@ button[type='submit']:active {
   box-shadow: var(--shadow-xl);
   animation: slideUp 0.3s ease;
   z-index: 1001;
+  margin: auto;
+  max-height: calc(100vh - var(--spacing-xl) * 2);
+  overflow-y: auto;
 }
 
 .modal-header {
