@@ -572,6 +572,10 @@ const ResultsDisplay = {
 // NUMBER PAD
 // ===================
 const NumberPad = {
+  touchStartY: 0,
+  touchStartTime: 0,
+  isTouchMove: false,
+
   init() {
     this.bindButtons();
     this.bindControls();
@@ -586,10 +590,51 @@ const NumberPad = {
         btn.blur();
       };
 
-      btn.addEventListener('click', handleClick);
+      // Track touch start
+      btn.addEventListener(
+        'touchstart',
+        (e) => {
+          this.touchStartY = e.touches[0].clientY;
+          this.touchStartTime = Date.now();
+          this.isTouchMove = false;
+        },
+        { passive: true },
+      );
+
+      // Track if user is scrolling
+      btn.addEventListener(
+        'touchmove',
+        (e) => {
+          const touchMoveY = e.touches[0].clientY;
+          const deltaY = Math.abs(touchMoveY - this.touchStartY);
+
+          // If moved more than 10px, consider it a scroll
+          if (deltaY > 10) {
+            this.isTouchMove = true;
+          }
+        },
+        { passive: true },
+      );
+
+      // Only trigger on touchend if not scrolling
       btn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        handleClick();
+        const touchDuration = Date.now() - this.touchStartTime;
+
+        // Prevent click if:
+        // - User was scrolling
+        // - Touch was too quick (< 50ms, likely accidental)
+        if (!this.isTouchMove && touchDuration >= 50) {
+          e.preventDefault();
+          handleClick();
+        }
+      });
+
+      // Regular click for mouse/desktop
+      btn.addEventListener('click', (e) => {
+        // Only handle click if it wasn't from a touch event
+        if (e.detail !== 0) {
+          handleClick();
+        }
       });
     });
   },
@@ -624,15 +669,15 @@ const NumberPad = {
     const clearBtn = DOM.get('clear');
     const backspaceBtn = DOM.get('backspace');
 
-    clearBtn.addEventListener('click', () => {
+    const handleClear = () => {
       playersInput.value = '';
       clearBtn.blur();
       playersInput.focus();
       ErrorHandler.hide();
       this.updateState();
-    });
+    };
 
-    backspaceBtn.addEventListener('click', () => {
+    const handleBackspace = () => {
       const currentValue = playersInput.value.trim();
       const numbers = Utils.parsePlayerInput(currentValue);
 
@@ -644,6 +689,26 @@ const NumberPad = {
       this.updateState();
       backspaceBtn.blur();
       playersInput.focus();
+    };
+
+    // Clear button
+    clearBtn.addEventListener('click', (e) => {
+      if (e.detail !== 0) handleClear();
+    });
+
+    clearBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleClear();
+    });
+
+    // Backspace button
+    backspaceBtn.addEventListener('click', (e) => {
+      if (e.detail !== 0) handleBackspace();
+    });
+
+    backspaceBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleBackspace();
     });
   },
 

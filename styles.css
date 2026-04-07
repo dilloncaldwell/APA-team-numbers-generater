@@ -576,6 +576,7 @@ button[type='submit']:active {
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
@@ -597,8 +598,9 @@ button[type='submit']:active {
 }
 
 .number-btn:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: scale(0.96);
   box-shadow: var(--shadow-xs);
+  transition: transform 0.1s ease;
 }
 
 .number-btn:active:not(:disabled)::before {
