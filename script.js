@@ -466,10 +466,39 @@ const TeamRenderer = {
   createTeamCard(team, index) {
     const total = team.reduce((sum, num) => sum + num, 0);
     const delay = index * CONFIG.ANIMATION_DELAY.CARD_STAGGER;
+    const teamData = State.getCurrentTeamData();
+
+    // Count how many of each number should be faded (required state)
+    const requiredCounts = {};
+    teamData.filterStates.forEach((state, idx) => {
+      if (state === 'required') {
+        const num = teamData.playersList[idx];
+        requiredCounts[num] = (requiredCounts[num] || 0) + 1;
+      }
+    });
+
+    // Track how many of each number we've styled so far
+    const styledCounts = {};
+
+    // Create styled numbers - fade only the specific instances that are required
+    const styledNumbers = team
+      .map((num) => {
+        const requiredCount = requiredCounts[num] || 0;
+        const currentCount = styledCounts[num] || 0;
+
+        // If we haven't styled enough instances of this number yet
+        if (currentCount < requiredCount) {
+          styledCounts[num] = currentCount + 1;
+          return `<span class="fade-number">${num}</span>`;
+        } else {
+          return num;
+        }
+      })
+      .join(', ');
 
     return `
       <div class="team-card" style="animation-delay: ${delay}s">
-        <div class="team-numbers">${team.join(', ')}</div>
+        <div class="team-numbers">${styledNumbers}</div>
         <div class="team-total">Total: ${total}</div>
       </div>
     `;

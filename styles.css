@@ -777,6 +777,13 @@ button[type='submit']:active {
   color: var(--text-primary);
   font-family: 'Courier New', monospace;
   margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.fade-number {
+  /*color: var(--accent-primary);*/
+  color: #43577e;
+  text-decoration: line-through;
 }
 
 .team-total {
