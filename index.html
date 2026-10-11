@@ -1,184 +1,154 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1e1e2e" />
-    <meta
-      name="description"
-      content="Calculate valid 5-player APA team combinations with skill level constraints"
-    />
-    <title>APA Team Numbers Generator</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <div class="container">
-      <header>
-        <h1>APA Team Numbers Generator</h1>
-        <p>Calculate valid 5-player team combinations under APA rules</p>
-      </header>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/8ball-32.png" />
+		<!-- iOS specific meta tags -->
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+		<meta name="apple-mobile-web-app-title" content="APA Team Numbers Generator" />
 
-      <div class="content">
-        <details class="rules">
-          <summary>Rules</summary>
-          <ul>
-            <li>Teams must have exactly 5 players</li>
-            <li>Total skill level cannot exceed 23</li>
-            <li>Maximum of 2 high-ranked players per team</li>
-            <li>8-ball: high ranks are 6 and 7</li>
-            <li>9-ball: high ranks are 7, 8, and 9</li>
-            <li>Filter tips: Tap once to require, twice to exclude, three times to reset</li>
-          </ul>
-        </details>
+		<!-- Android specific meta tag -->
+		<meta name="mobile-web-app-capable" content="yes" />
 
-        <!-- Team Tabs -->
-        <div class="team-tabs">
-          <button type="button" class="team-tab active" data-team="myTeam">My Team</button>
-          <button type="button" class="team-tab" data-team="opponent">Opponent</button>
-        </div>
+		<!-- PWA manifest -->
+		<link rel="manifest" href="/manifest.json" />
 
-        <form id="teamForm">
-          <div id="formSection">
-            <div class="form-group">
-              <label>Game Type</label>
-              <div class="radio-group">
-                <label>
-                  <input type="radio" name="gameType" value="8" checked />
-                  <span>8-ball</span>
-                </label>
-                <label>
-                  <input type="radio" name="gameType" value="9" />
-                  <span>9-ball</span>
-                </label>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="players">
-                Player Skill Levels
-                <span
-                  id="playerCount"
-                  style="font-weight: 600; margin-left: 8px; color: var(--text-secondary)"
-                  >(0/8)</span
-                >
-              </label>
-              <input
-                type="text"
-                id="players"
-                placeholder="Tap numbers below or type (e.g., 7 6 5 4 4 3 2 2)"
-                autocomplete="off"
-                inputmode="none"
-              />
-              <div class="hint">Tap numbers below to add players (5-8 players required)</div>
+		<meta name="theme-color" content="#1e1e2e" />
+		<meta name="description" content="Calculate valid 5-player APA team combinations with skill level constraints" />
+		<title>APA Team Numbers Generator</title>
+		<link rel="stylesheet" href="styles.css" />
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<h1>APA Team Numbers Generator</h1>
+				<p>Calculate valid 5-player team combinations under APA rules</p>
+			</header>
 
-              <div class="number-pad">
-                <button type="button" class="number-btn" data-number="1">1</button>
-                <button type="button" class="number-btn" data-number="2">2</button>
-                <button type="button" class="number-btn" data-number="3">3</button>
-                <button type="button" class="number-btn" data-number="4">4</button>
-                <button type="button" class="number-btn" data-number="5">5</button>
-                <button type="button" class="number-btn" data-number="6">6</button>
-                <button type="button" class="number-btn" data-number="7">7</button>
-                <button type="button" class="number-btn" data-number="8">8</button>
-                <button type="button" class="number-btn" data-number="9">9</button>
-              </div>
+			<div class="content">
+				<details class="rules">
+					<summary>Rules</summary>
+					<ul>
+						<li>Teams must have exactly 5 players</li>
+						<li>Total skill level cannot exceed 23</li>
+						<li>Maximum of 2 high-ranked players per team</li>
+						<li>8-ball: high ranks are 6 and 7</li>
+						<li>9-ball: high ranks are 7, 8, and 9</li>
+						<li>Filter tips: Tap once to require, twice to exclude, three times to reset</li>
+					</ul>
+				</details>
 
-              <div class="input-controls">
-                <button type="button" class="backspace-btn" id="backspace">⌫ Backspace</button>
-                <button type="button" class="clear-btn" id="clear">✕ Clear</button>
-              </div>
-            </div>
+				<!-- Team Tabs -->
+				<div class="team-tabs">
+					<button type="button" class="team-tab active" data-team="myTeam">My Team</button>
+					<button type="button" class="team-tab" data-team="opponent">Opponent</button>
+				</div>
 
-            <button type="submit">Generate Team Plays</button>
-          </div>
-        </form>
+				<form id="teamForm">
+					<div id="formSection">
+						<div class="form-group">
+							<label>Game Type</label>
+							<div class="radio-group">
+								<label>
+									<input type="radio" name="gameType" value="8" checked />
+									<span>8-ball</span>
+								</label>
+								<label>
+									<input type="radio" name="gameType" value="9" />
+									<span>9-ball</span>
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="players">
+								Player Skill Levels
+								<span id="playerCount" style="font-weight: 600; margin-left: 8px; color: var(--text-secondary)">(0/8)</span>
+							</label>
+							<input type="text" id="players" placeholder="Tap numbers below or type (e.g., 7 6 5 4 4 3 2 2)" autocomplete="off" inputmode="none" />
+							<div class="hint">Tap numbers below to add players (5-8 players required)</div>
 
-        <div id="error" class="error" style="display: none"></div>
+							<div class="number-pad">
+								<button type="button" class="number-btn" data-number="1">1</button>
+								<button type="button" class="number-btn" data-number="2">2</button>
+								<button type="button" class="number-btn" data-number="3">3</button>
+								<button type="button" class="number-btn" data-number="4">4</button>
+								<button type="button" class="number-btn" data-number="5">5</button>
+								<button type="button" class="number-btn" data-number="6">6</button>
+								<button type="button" class="number-btn" data-number="7">7</button>
+								<button type="button" class="number-btn" data-number="8">8</button>
+								<button type="button" class="number-btn" data-number="9">9</button>
+							</div>
 
-        <div id="resultsSection" style="display: none">
-          <button type="button" id="regenerateBtn" class="regenerate-btn">
-            Regenerate Team Plays
-          </button>
+							<div class="input-controls">
+								<button type="button" class="backspace-btn" id="backspace">⌫ Backspace</button>
+								<button type="button" class="clear-btn" id="clear">✕ Clear</button>
+							</div>
+						</div>
 
-          <div id="results" class="results">
-            <div class="results-header">
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  justify-content: space-between;
-                  flex-wrap: wrap;
-                  gap: 12px;
-                "
-              >
-                <h3>Team Plays Found</h3>
-                <button
-                  type="button"
-                  id="copyAllBtn"
-                  class="copy-all-btn"
-                  style="display: none"
-                  aria-label="Copy all teams"
-                  title="Copy all teams"
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
-                </button>
-              </div>
-              <div class="results-stats">
-                <span id="teamCount"></span>
-              </div>
+						<button type="submit">Generate Team Plays</button>
+					</div>
+				</form>
 
-              <div class="filter-container" id="filterContainer" style="display: none">
-                <div class="filter-label">Filters (Tap: Require → Exclude → Reset):</div>
-                <div class="filter-buttons" id="filterButtons"></div>
-                <div class="filter-count" id="filterCount"></div>
-              </div>
-            </div>
+				<div id="error" class="error" style="display: none"></div>
 
-            <div id="teamsList" class="teams-grid"></div>
-          </div>
+				<div id="resultsSection" style="display: none">
+					<button type="button" id="regenerateBtn" class="regenerate-btn">Regenerate Team Plays</button>
 
-          <button type="button" id="resetDataBtn" class="reset-data-btn">⚠️ Reset All Data</button>
-        </div>
-      </div>
+					<div id="results" class="results">
+						<div class="results-header">
+							<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px">
+								<h3>Team Plays Found</h3>
+								<button type="button" id="copyAllBtn" class="copy-all-btn" style="display: none" aria-label="Copy all teams" title="Copy all teams">
+									<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+										<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+									</svg>
+								</button>
+							</div>
+							<div class="results-stats">
+								<span id="teamCount"></span>
+							</div>
 
-      <footer>
-        <p>Made for APA players by Dillon Caldwell</p>
-      </footer>
-    </div>
+							<div class="filter-container" id="filterContainer" style="display: none">
+								<div class="filter-label">Filters (Tap: Require → Exclude → Reset):</div>
+								<div class="filter-buttons" id="filterButtons"></div>
+								<div class="filter-count" id="filterCount"></div>
+							</div>
+						</div>
 
-    <!-- Reset Confirmation Modal -->
-    <div id="resetModal" class="modal" style="display: none">
-      <div class="modal-overlay"></div>
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>⚠️ Reset All Data</h3>
-        </div>
-        <div class="modal-body">
-          <p>Are you sure you want to reset all saved data for both teams?</p>
-          <p class="modal-warning">
-            This will clear all players, results, and filters. This action cannot be undone.
-          </p>
-        </div>
-        <div class="modal-actions">
-          <button type="button" id="cancelReset" class="modal-btn modal-btn-cancel">Cancel</button>
-          <button type="button" id="confirmReset" class="modal-btn modal-btn-confirm">
-            Reset All Data
-          </button>
-        </div>
-      </div>
-    </div>
+						<div id="teamsList" class="teams-grid"></div>
+					</div>
 
-    <script src="script.js"></script>
-  </body>
+					<button type="button" id="resetDataBtn" class="reset-data-btn">⚠️ Reset All Data</button>
+				</div>
+			</div>
+
+			<footer>
+				<p>Made for pool players by Dillon Caldwell</p>
+				<p>App Not affiliated with APA</p>
+			</footer>
+		</div>
+
+		<!-- Reset Confirmation Modal -->
+		<div id="resetModal" class="modal" style="display: none">
+			<div class="modal-overlay"></div>
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3>⚠️ Reset All Data</h3>
+				</div>
+				<div class="modal-body">
+					<p>Are you sure you want to reset all saved data for both teams?</p>
+					<p class="modal-warning">This will clear all players, results, and filters. This action cannot be undone.</p>
+				</div>
+				<div class="modal-actions">
+					<button type="button" id="cancelReset" class="modal-btn modal-btn-cancel">Cancel</button>
+					<button type="button" id="confirmReset" class="modal-btn modal-btn-confirm">Reset All Data</button>
+				</div>
+			</div>
+		</div>
+
+		<script src="script.js"></script>
+	</body>
 </html>

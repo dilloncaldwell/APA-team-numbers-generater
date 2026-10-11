@@ -1,0 +1,23 @@
+{
+	"name": "APA Team Numbers Generator",
+	"short_name": "APA Team Numbers Generator",
+	"display": "standalone",
+	"orientation": "portrait",
+	"start_url": "/apa-team-numbers-generator/",
+	"scope": "/apa-team-numbers-generator/",
+	"theme_color": "#05072b",
+	"background_color": "#05072b",
+	"icons": [
+		{
+			"src": "/apa-team-numbers-generator/8ball-192.png",
+			"sizes": "192x192",
+			"type": "image/svg+xml"
+		},
+		{
+			"src": "/apa-team-numbers-generator/8ball-192.png",
+			"sizes": "512x512",
+			"type": "image/svg+xml"
+		}
+	],
+	"prefer_related_applications": false
+}
