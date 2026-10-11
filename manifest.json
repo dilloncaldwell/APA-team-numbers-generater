@@ -3,8 +3,8 @@
 	"short_name": "APA Team Numbers Generator",
 	"display": "standalone",
 	"orientation": "portrait",
-	"start_url": "/apa-team-numbers-generator/",
-	"scope": "/apa-team-numbers-generator/",
+	"start_url": "/APA-team-numbers-generator/",
+	"scope": "/APA-team-numbers-generator/",
 	"theme_color": "#05072b",
 	"background_color": "#89b4fa",
 	"icons": [
